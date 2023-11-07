@@ -47,6 +47,19 @@ async function run() {
       const result= await cursor.toArray();
       res.send(result)
     })
+    app.get('/food/:email', async(req,res)=>{
+      const email=req.params.email;
+      const query={email:email}
+      // const options = {
+      //   // Sort returned documents in ascending order by title (A->Z)
+      //   sort: { email: email },
+      //   // Include only the `title` and `imdb` fields in each returned document
+      //   projection: { _id: email._id, image: email.image},
+      // };
+      const cursor = foodCollection.find(query);
+      const result= await cursor.toArray();
+      res.send(result)
+    })
     app.get('/food/:id', async(req,res)=>{
       const id=req.params.id;
       const query={_id: new ObjectId(id)}
@@ -64,7 +77,7 @@ async function run() {
         },
       };
       const result= await foodCollection.updateOne(filter,food,options)
-      res.send(result)
+      res.send(result);
     })
     app.delete('/food/:id',async(req,res)=>{
       const id=req.params.id;
