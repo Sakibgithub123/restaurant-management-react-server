@@ -53,6 +53,19 @@ async function run() {
       const result = await foodCollection.findOne(query);
       res.send(result)
     })
+    app.put('/food/:id', async(req,res)=>{
+      const id=req.params.id;
+      const filter={_id: new ObjectId(id)}
+      const options = { upsert: true };
+      const updateFood=req.body;
+      const food = {
+        $set: {
+          food_name:updateFood.food_name,image:updateFood.image ,category:updateFood.category,quantity:updateFood.quantity,price:updateFood.price,addby:updateFood.addby,food_origin:updateFood.food_origin,description:updateFood.description
+        },
+      };
+      const result= await foodCollection.updateOne(filter,food,options)
+      res.send(result)
+    })
     app.delete('/food/:id',async(req,res)=>{
       const id=req.params.id;
       const query={_id: new ObjectId(id)}
