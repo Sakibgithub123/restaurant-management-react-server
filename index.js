@@ -34,6 +34,8 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const foodCollection = client.db("restaurantDB").collection("food");
+    const myfoodCollection = client.db("restaurantDB").collection("myFood");
+    const myOrderCollection = client.db("restaurantDB").collection("myOrderFood");
 
 
     app.post('/food', async(req,res)=>{
@@ -42,12 +44,29 @@ async function run() {
       const result = await foodCollection.insertOne(addFood);
       res.send(result)
     })
+    app.post('/myfood', async(req,res)=>{
+      const addFood=req.body;
+      console.log(addFood)
+      const result = await myfoodCollection.insertOne(addFood);
+      res.send(result)
+    })
+    //myorder
+    app.post('/myorderfood', async(req,res)=>{
+      const addFood=req.body;
+      console.log(addFood)
+      const result = await myOrderCollection.insertOne(addFood);
+      res.send(result)
+    })
+    
+
+    //myorderend
+
     app.get('/food', async(req,res)=>{
       const cursor = foodCollection.find();
       const result= await cursor.toArray();
       res.send(result)
     })
-    app.get('/food/:email', async(req,res)=>{
+    app.get('/myfood/:email', async(req,res)=>{
       const email=req.params.email;
       const query={email:email}
       // const options = {
@@ -56,16 +75,39 @@ async function run() {
       //   // Include only the `title` and `imdb` fields in each returned document
       //   projection: { _id: email._id, image: email.image},
       // };
-      const cursor = foodCollection.find(query);
+      const cursor = myfoodCollection.find(query);
       const result= await cursor.toArray();
       res.send(result)
     })
+    app.get('/myfood/:id', async(req,res)=>{
+      const id=req.params.id;
+      const query={_id: new ObjectId(id)}
+      const result = await myfoodCollection.findOne(query);
+      console.log(result)
+      res.send(result)
+    })
+     app.put('/myfood/:id', async(req,res)=>{
+      const id=req.params.id;
+      const filter={_id: new ObjectId(id)}
+      const options = { upsert: true };
+      const updateFood=req.body;
+      const food = {
+        $set: {
+          food_name:updateFood.food_name,image:updateFood.image,email:updateFood.email,category:updateFood.category,quantity:updateFood.quantity,price:updateFood.price,addby:updateFood.addby,food_origin:updateFood.food_origin,description:updateFood.description
+        },
+      };
+      const result= await myfoodCollection.updateOne(filter,food,options)
+      res.send(result);
+    })
+
     app.get('/food/:id', async(req,res)=>{
       const id=req.params.id;
       const query={_id: new ObjectId(id)}
       const result = await foodCollection.findOne(query);
+      console.log(result)
       res.send(result)
     })
+
     app.put('/food/:id', async(req,res)=>{
       const id=req.params.id;
       const filter={_id: new ObjectId(id)}
@@ -79,6 +121,7 @@ async function run() {
       const result= await foodCollection.updateOne(filter,food,options)
       res.send(result);
     })
+
     app.delete('/food/:id',async(req,res)=>{
       const id=req.params.id;
       const query={_id: new ObjectId(id)}
