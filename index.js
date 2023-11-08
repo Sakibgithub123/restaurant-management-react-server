@@ -47,7 +47,7 @@ async function run() {
     app.post('/myfood', async(req,res)=>{
       const addFood=req.body;
       console.log(addFood)
-      const result = await myfoodCollection.insertOne(addFood);
+      const result = await foodCollection.insertOne(addFood);
       res.send(result)
     })
     //myorder
@@ -86,42 +86,6 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/myfood/:email', async(req,res)=>{
-      const email=req.params.email;
-      const query={email:email}
-      // const options = {
-      //   // Sort returned documents in ascending order by title (A->Z)
-      //   sort: { email: email },
-      //   // Include only the `title` and `imdb` fields in each returned document
-      //   projection: { _id: email._id, image: email.image},
-      // };
-      const cursor = myfoodCollection.find(query);
-      const result= await cursor.toArray();
-      res.send(result)
-    })
-
- 
-    app.get('/myfood/:id', async(req,res)=>{
-      const id=req.params.id;
-      const query={_id: new ObjectId(id)}
-      const result = await myfoodCollection.findOne(query);
-      console.log(result)
-      res.send(result)
-    })
-     app.put('/myfood/:id', async(req,res)=>{
-      const id=req.params.id;
-      const filter={_id: new ObjectId(id)}
-      const options = { upsert: true };
-      const updateFood=req.body;
-      const food = {
-        $set: {
-          food_name:updateFood.food_name,image:updateFood.image,email:updateFood.email,category:updateFood.category,quantity:updateFood.quantity,price:updateFood.price,addby:updateFood.addby,food_origin:updateFood.food_origin,description:updateFood.description
-        },
-      };
-      const result= await myfoodCollection.updateOne(filter,food,options)
-      res.send(result);
-    })
-
     app.get('/food/:id', async(req,res)=>{
       const id=req.params.id;
       const query={_id: new ObjectId(id)}
@@ -150,6 +114,40 @@ async function run() {
       const result = await foodCollection.deleteOne(query);
       res.send(result)
     })
+
+    //my food details
+
+    app.get('/myfood/:email', async(req,res)=>{
+      const email=req.params.email;
+      const query={email:email}
+      const cursor = foodCollection.find(query);
+      const result= await cursor.toArray();
+      res.send(result)
+    })
+
+ 
+    app.get('/myfood/:pid', async(req,res)=>{
+      const pid=req.params.pid;
+      const query={_id: new ObjectId(pid)}
+      const result = await foodCollection.findOne(query);
+      console.log(result)
+      res.send(result)
+    })
+     app.put('/myfood/:id', async(req,res)=>{
+      const id=req.params.id;
+      const filter={_id: new ObjectId(id)}
+      const options = { upsert: true };
+      const updateFood=req.body;
+      const food = {
+        $set: {
+          food_name:updateFood.food_name,image:updateFood.image,email:updateFood.email,category:updateFood.category,quantity:updateFood.quantity,price:updateFood.price,addby:updateFood.addby,food_origin:updateFood.food_origin,description:updateFood.description
+        },
+      };
+      const result= await foodCollection.updateOne(filter,food,options)
+      res.send(result);
+    })
+
+
     //fetch food by name
     app.get('/foodname/:food_name', async(req,res)=>{
       const food_name=req.params.food_name;
@@ -157,6 +155,10 @@ async function run() {
       const cursor = foodCollection.find(query);
       const result= await cursor.toArray();
       res.send(result)
+    })
+    app.get('/foodcounts', async(req,res)=>{
+      const count= await foodCollection.estimatedDocumentCount()
+      res.send({count})
     })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
