@@ -57,6 +57,19 @@ async function run() {
       const result = await myOrderCollection.insertOne(addFood);
       res.send(result)
     })
+     app.get('/myorderfood/:email', async(req,res)=>{
+      const email=req.params.email;
+      const query={email:email}
+      // const options = {
+      //   // Sort returned documents in ascending order by title (A->Z)
+      //   sort: { email: email },
+      //   // Include only the `title` and `imdb` fields in each returned document
+      //   projection: { _id: email._id, image: email.image},
+      // };
+      const cursor = myOrderCollection.find(query);
+      const result= await cursor.toArray();
+      res.send(result)
+    })
     
 
     //myorderend
