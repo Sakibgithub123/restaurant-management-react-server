@@ -85,6 +85,7 @@ async function run() {
       const result= await cursor.toArray();
       res.send(result)
     })
+
     app.get('/myfood/:email', async(req,res)=>{
       const email=req.params.email;
       const query={email:email}
@@ -98,6 +99,8 @@ async function run() {
       const result= await cursor.toArray();
       res.send(result)
     })
+
+ 
     app.get('/myfood/:id', async(req,res)=>{
       const id=req.params.id;
       const query={_id: new ObjectId(id)}
@@ -145,6 +148,14 @@ async function run() {
       const id=req.params.id;
       const query={_id: new ObjectId(id)}
       const result = await foodCollection.deleteOne(query);
+      res.send(result)
+    })
+    //fetch food by name
+    app.get('/foodname/:food_name', async(req,res)=>{
+      const food_name=req.params.food_name;
+      const query={food_name:food_name}
+      const cursor = foodCollection.find(query);
+      const result= await cursor.toArray();
       res.send(result)
     })
     // Send a ping to confirm a successful connection
