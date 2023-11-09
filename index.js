@@ -1,12 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const app = express()
+// const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const app = express();
 const port = process.env.PORT || 5000;
 
-//sakib
-//hR7wU3LMZ80Uq68U
+
 console.log(process.env.DB_USER)
 
 //middleware
@@ -20,7 +19,7 @@ app.use(express.json())
 
 
 
-
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.olvofey.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -130,13 +129,7 @@ async function run() {
     })
 
 
-    // app.get('/myfood/:pid', async(req,res)=>{
-    //   const pid=req.params.pid;
-    //   const query={_id: new ObjectId(pid)}
-    //   const result = await foodCollection.findOne(query);
-    //   console.log(result)
-    //   res.send(result)
-    // })
+  
     app.put('/myfood/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
@@ -160,67 +153,16 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result)
     })
-    app.get('/foodcounts', async (req, res) => {
-      const count = await foodCollection.estimatedDocumentCount()
-      res.send({ count })
-    })
-    //most sell
-    // app.get('/topSell', async (req, res) => {
-    //   // Aggregate pipeline
-    //   const pipeline = [
-    //     {
-    //       $group: {
-    //         _id: '$category',
-    //         totalSold: { $sum: 1 }
-    //       }
-    //     },
-    //     {
-    //       $sort: {
-    //         totalSold: -1
-    //       }
-    //     },
-    //     {
-    //       $limit: 1
-    //     }
-    //   ];
-
-    //   // Execute the aggregate query
-    //   myOrderCollection.aggregate(pipeline).toArray((err, result) => {
-    //     if (err) {
-    //       console.error('Error executing aggregate query:', err);
-    //       return;
-    //     }
-
-    //     // Result will contain the most-sold product
-    //     const mostSoldProduct = result[0];
-    //     res.send(mostSoldProduct)
-
-    //   })
-
-    // })
+    
     app.get('/topSell', async (req, res) => {
-      // const cursor = foodCollection.find();
-      // const result = await cursor.toArray();
-      // res.send(result)
       const pipeline = [
-        // { $match: { price: "$price",category:"$category",description:"$description" } },
+      
         { $group: { _id: "$food_name",  count: { $sum: 1 } } },
       
     ];
     // Execute the aggregation
     const aggCursor = myOrderCollection.aggregate(pipeline);
-    // Print the aggregated results
-    // for await (const result of aggCursor) {
-    //   res.send(result)
-    // }
     const result=await aggCursor.toArray();
-    // const result1= myOrderCollection.find();
-    // if(result.length>0){
-    //   const mostSoldProduct = result[0];
-    //    // Fetch product details based on the most sold product name
-    //    const productDetails = await myOrderCollection.findOne({ _id: mostSoldProduct._id });
-    //    res.send(productDetails)
-    // }
     res.send(result)
     
     })
