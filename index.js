@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParse=require('cookie-parser')
 require('dotenv').config();
 // const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
@@ -12,10 +14,14 @@ console.log(process.env.DB_USER)
 
 app.use(cors({
   origin:[
-    'http://localhost:5173'
-  ]
+    'http://localhost:5173','https://enmmedia-19300.web.app',
+    'https://restautant-management-react.web.app','https://restautant-management-react.firebaseapp.com'
+  ],
+  // "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+  credentials:true,
 }));
 app.use(express.json())
+app.use(cookieParse())
 
 
 
@@ -31,6 +37,28 @@ const client = new MongoClient(uri, {
   }
 });
 
+//middlewares
+
+const logger=(req,res,next)=>{
+  console.log('loginfo:',req.method,req.url)
+  next();
+}
+const veryFyToken=(req,res,next)=>{
+  const token=req.cookies?.token;
+  console.log('token in the middleware',token)
+  if(!token){
+   return res.status(401).send({message:"unauthorized access"})
+  }
+  jwt.verify(token.process.env.SECRET_ACCESS_TOKEN,(err,decode)=>{
+ if(err){
+  return res.status(401).send({message:"unauthorized access"})
+ }
+ req.user=decode;
+ next()
+
+  })
+}
+
 
 async function run() {
   try {
@@ -39,7 +67,23 @@ async function run() {
     const foodCollection = client.db("restaurantDB").collection("food");
     const myfoodCollection = client.db("restaurantDB").collection("myFood");
     const myOrderCollection = client.db("restaurantDB").collection("myOrderFood");
-
+  
+    app.post('/jwt',logger, async(req,res)=>{
+      const user =req.body;
+      console.log('user:',user);
+      const token=jwt.sign(user,process.env.SECRET_ACCESS_TOKEN,{expiresIn:'1h'})
+      res.cookie('token',token,{
+        httpOnly:true,
+        secure:true,
+        sameSite:"none"
+      })
+      res.send({success:true})
+    })
+    app.post('/logout',async(req,res)=>{
+      const user=req.body;
+      console.log('logout user',user)
+      res.clearCookie('token',{maxAge:0}).send({success:true})
+    })
 
     app.post('/food', async (req, res) => {
       const addFood = req.body;
@@ -63,17 +107,26 @@ async function run() {
     app.get('/myorderfood/:email', async (req, res) => {
       const email = req.params.email;
       const query = { email: email }
-      // const options = {
-      //   // Sort returned documents in ascending order by title (A->Z)
-      //   sort: { email: email },
-      //   // Include only the `title` and `imdb` fields in each returned document
-      //   projection: { _id: email._id, image: email.image},
-      // };
       const cursor = myOrderCollection.find(query);
       const result = await cursor.toArray();
       res.send(result)
     })
-    app.delete('/myorderfood/:id', async (req, res) => {
+    // app.get('/myorderfood',logger, async (req, res) => {
+    //   console.log(req.query.email);
+    //   // console.log('ttttt token', req.cookies.token)
+    //   console.log('user in the valid token', req.user)
+    //   if(req.query.email !== req.user.email){
+    //       return res.status(403).send({message: 'forbidden access'})
+    //   }
+
+    //   let query = {};
+    //   if (req.query?.email) {
+    //       query = { email: req.query.email }
+    //   }
+    //   const result = await myOrderCollection.find(query).toArray();
+    //   res.send(result);
+    // })
+    app.delete('/myorderfood/:id',logger, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await myOrderCollection.deleteOne(query);
@@ -84,7 +137,9 @@ async function run() {
     //myorderend
 
     app.get('/food', async (req, res) => {
-      const cursor = foodCollection.find();
+      const page=parseInt(req.query.page)
+      const size=parseInt(req.query.size)
+      const cursor = foodCollection.find().skip(page * size).limit(size);
       const result = await cursor.toArray();
       res.send(result)
     })
@@ -120,8 +175,11 @@ async function run() {
 
     //my food details
 
-    app.get('/myfood/:email', async (req, res) => {
+    app.get('/myfood/:email', logger, async (req, res) => {
       const email = req.params.email;
+      // if(req.email !==req.user.email){
+      //   return res.status(403).send({message:"forbidden access"})
+      // }
       const query = { email: email }
       const cursor = foodCollection.find(query);
       const result = await cursor.toArray();
@@ -156,15 +214,16 @@ async function run() {
     
     app.get('/topSell', async (req, res) => {
       const pipeline = [
-      
         { $group: { _id: "$food_name",  count: { $sum: 1 } } },
-      
     ];
     // Execute the aggregation
     const aggCursor = myOrderCollection.aggregate(pipeline);
-    const result=await aggCursor.toArray();
+    const result= await aggCursor.toArray();
     res.send(result)
-    
+    })
+    app.get('/foodcount',async(req,res)=>{
+      const count=await foodCollection.estimatedDocumentCount()
+      res.send({count})
     })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
